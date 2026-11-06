@@ -1,13 +1,14 @@
 """Entry point for the two-player chess game.
 
 Run with:  python main.py
+Needs pygame-ce:  pip install -r requirements.txt
 """
 
-from chessgame.interface import run
+from chessgame.gui import run
 
 
 def main():
-    """Start the game."""
+    """Open the game window."""
     run()
 
 

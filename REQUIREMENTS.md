@@ -1,24 +1,26 @@
 # Project Requirements: Two-Player Terminal Chess
 
-**Language:** Python 3 (standard library only)
-**Platform:** Terminal / command line
+**Language:** Python 3, standard library plus pygame-ce for the window
+**Platform:** Desktop window (pygame). The original proposal used the
+terminal; the interface was changed to pygame on 2026-11-06 (Prompt 8 in
+`PROMPTS.md`).
 **Source:** Derived from the project proposal (in `CLAUDE.md`)
 
 ---
 
 ## 1. Purpose and Scope
 
-A two-player chess game that runs in the terminal. Two people share one
-computer and take turns entering moves in coordinate notation (e.g. `e2 e4`).
-The program redraws the board after every move, rejects illegal moves, and
+A two-player chess game that runs in a pygame window. Two people share one
+computer and take turns making moves, either by clicking a piece and its
+target square or by typing coordinate notation (e.g. `e2 e4`) into a command
+box. The program redraws the board after every move, rejects illegal moves, and
 announces check, checkmate and stalemate.
 
 The core of the project is the **rules engine**: working out which moves are
 legal in a given position, including excluding moves that would leave the
 moving player's own king in check.
 
-**Out of scope:** AI/computer opponent, network play, graphical UI, clocks or
-timers, draw by repetition / 50-move rule (unless added later).
+**Out of scope:** AI/computer opponent, network play, clocks or timers, draw by repetition / 50-move rule (unless added later).
 
 ---
 
@@ -39,16 +41,16 @@ timers, draw by repetition / 50-move rule (unless added later).
 | ID | Requirement | Priority | Milestone |
 |----|-------------|----------|-----------|
 | FR-01 | The program shall create the standard chess starting position. | Must | Interim |
-| FR-02 | The board shall be printed to the terminal with rank (1–8) and file (a–h) labels. | Must | Interim |
+| FR-02 | The board shall be drawn in the window with rank (1–8) and file (a–h) labels. | Must | Interim |
 | FR-03 | The board shall be redrawn after every successful move. | Must | Interim |
-| FR-04 | Pieces shall be shown using display symbols mapped from piece letters. | Must | Interim |
+| FR-04 | Pieces shall be drawn using chess symbols mapped from piece letters. | Must | Interim |
 | FR-05 | The program shall show whose turn it is before each move. | Must | Interim |
 
 ### 3.2 Input and Turn Handling
 
 | ID | Requirement | Priority | Milestone |
 |----|-------------|----------|-----------|
-| FR-06 | The program shall accept moves in the form `<from> <to>` (e.g. `e2 e4`). | Must | Interim |
+| FR-06 | The program shall accept moves typed in the form `<from> <to>` (e.g. `e2 e4`) and moves made by clicking the from and to squares. | Must | Interim |
 | FR-07 | Input squares shall be converted from algebraic notation to board coordinates. | Must | Interim |
 | FR-08 | Players shall alternate turns, starting with White. | Must | Interim |
 | FR-09 | A player shall only be allowed to move their own pieces. | Must | Interim |
@@ -95,7 +97,7 @@ timers, draw by repetition / 50-move rule (unless added later).
 | FR-30 | The game shall be savable to a text file. | Could | Final |
 | FR-31 | A saved game shall be loadable from a text file. | Could | Final |
 | FR-32 | A help command shall list the available commands. | Should | Final |
-| FR-33 | A quit command shall exit the game cleanly. | Must | Interim |
+| FR-33 | Closing the window or typing quit shall exit the game cleanly. | Must | Interim |
 
 ---
 
@@ -112,7 +114,7 @@ with a clear message, and the same player is prompted again.
 | EH-04 | Attempt to capture one's own piece | "Illegal move" message |
 | EH-05 | Move not allowed for that piece type, or blocked by another piece | "Illegal move" message |
 | EH-06 | Move that leaves or puts own king in check | "Your king would be in check" message |
-| EH-07 | Invalid promotion choice | Re-prompt for a valid piece |
+| EH-07 | Invalid promotion choice | Only queen, rook, bishop and knight are offered; a typed letter must be q, r, b or n |
 | EH-08 | Undo with no moves in history | "Nothing to undo" message |
 | EH-09 | Missing or corrupt save file when loading | Error message; current game continues |
 
@@ -137,7 +139,7 @@ The code shall be split into short, reusable functions. Planned functions:
 | Function | Responsibility |
 |----------|----------------|
 | `create_board()` | Return the starting 8×8 board. |
-| `print_board(board)` | Display the board with labels. |
+| `draw_board(...)` (gui.py) | Draw the board with labels in the window. |
 | `parse_move(text)` | Convert input like `"e2 e4"` to coordinates, or report invalid input. |
 | `get_piece_moves(board, row, col, state)` | Pseudo-legal moves for one piece. |
 | `ray_moves(board, row, col, d_row, d_col, colour)` | **Recursive** sliding-piece move generation. |
@@ -145,7 +147,7 @@ The code shall be split into short, reusable functions. Planned functions:
 | `get_legal_moves(board, row, col, state)` | Pseudo-legal moves filtered to exclude self-check. |
 | `make_move(board, move, state)` | Apply a move, including special moves, and update state. |
 | `is_checkmate(board, colour, state)` | In check with no legal moves. |
-| `main()` | Game loop: display, input, validation, turn switching. |
+| `main()` / `gui.run()` | Game loop: draw, read clicks and typing, validate, switch turns. |
 
 Additional helper functions (e.g. `is_stalemate`, `undo_move`, `save_game`,
 `load_game`) may be added as development progresses.
@@ -156,7 +158,7 @@ Additional helper functions (e.g. `is_stalemate`, `undo_move`, `save_game`,
 
 | ID | Requirement |
 |----|-------------|
-| NFR-01 | Runs in a standard terminal using only the Python standard library. |
+| NFR-01 | Uses only the Python standard library, plus pygame-ce for the window (`pip install -r requirements.txt`). |
 | NFR-02 | Modular design using small, single-purpose functions. |
 | NFR-03 | Meaningful variable and function names. |
 | NFR-04 | Consistent indentation and formatting. |

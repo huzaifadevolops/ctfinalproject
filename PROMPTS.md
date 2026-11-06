@@ -80,3 +80,36 @@ chapter markers (listed in `video/chapters.txt`).
 **Outcome:** Created the public GitHub repository `ctfinalproject` and pushed
 the project. The 150 MB video is left out (GitHub's file limit is 100 MB) and
 listed in `.gitignore`; it can be re-rendered with `video/render.py`.
+
+---
+
+## Prompt 7 — 2026-11-06
+
+> also create a md file explaining every move
+
+**Outcome:** Created `MOVES.md` (done together with Prompt 8): every piece's
+movement, captures, the special moves, the legality rules, how each move is
+entered and written in the history, and the functions, requirements and
+tests behind each one.
+
+---
+
+## Prompt 8 — 2026-11-06
+
+> also instead of printing to the terminal use pygame
+
+**Outcome:** Replaced the terminal UI with a pygame window. `interface.py`
+is now the command logic only (it returns messages instead of printing) and
+the new `gui.py` draws the board and handles clicks and typing. Removed the
+terminal-only `print_board` and `terminal_supports_unicode`. Updated
+`REQUIREMENTS.md`, `CLAUDE.md` and `MODULES.md` for the new pygame
+dependency, and added `requirements.txt` and `tests/test_interface.py`.
+
+---
+
+## Prompt 9 — 2026-11-06
+
+> push it to github
+
+**Outcome:** Committed the pygame interface, `MOVES.md` and the updated
+documents, and pushed them to `main` on GitHub.

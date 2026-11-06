@@ -9,8 +9,9 @@
    what it does, update `MODULES.md` to match.
 3. **Requirements:** `REQUIREMENTS.md` is the requirements specification.
    Reference requirement IDs (e.g. FR-18) when implementing or testing.
-4. **Code style:** Python 3 standard library only. Short, single-purpose
-   functions, meaningful names, docstrings, lines within 80 characters.
+4. **Code style:** Python 3 standard library, plus pygame-ce for the window
+   (only `gui.py` imports pygame). Short, single-purpose functions,
+   meaningful names, docstrings, lines within 80 characters.
 5. **Tests:** Add or update tests in `tests/` for every rule implemented.
    Run them with `python -m unittest discover -s tests`.
 
@@ -18,6 +19,9 @@
 
 ## Project Proposal: Two-Player Chess
 
+> Note: the proposal below describes a terminal game. On 2026-11-06 the
+> interface was changed to a pygame window (see `PROMPTS.md`, Prompt 8 and
+> `REQUIREMENTS.md`). The rules engine and features are unchanged.
 
 ### Project Description
 We will build a two-player chess game in Python that runs in the terminal.

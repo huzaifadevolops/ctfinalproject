@@ -3,11 +3,12 @@
 This file explains what every module in the project does. Update it
 whenever a module is added, removed or changes its job (see `CLAUDE.md`).
 
-**Current status:** the user interface and board display are built. The
-rules engine is an **outline**: every function has its name, inputs,
-outputs and a step-by-step plan in its docstring, but its body is just
-`raise NotImplementedError`. The game still runs; any command that needs an
-unbuilt function prints *"This feature is not built yet (needs ...)"*.
+**Current status:** the pygame window (`gui.py`) and its command logic
+(`interface.py`) are built. The rules engine is an **outline**: every
+function has its name, inputs, outputs and a step-by-step plan in its
+docstring, but its body is just `raise NotImplementedError`. The game still
+runs; any action that needs an unbuilt function shows *"Not built yet
+(needs ...)"* in the window's message box.
 
 ---
 
@@ -16,16 +17,18 @@ unbuilt function prints *"This feature is not built yet (needs ...)"*.
 ```
 ctfinalproject/
 ├── main.py                 Entry point: python main.py
+├── requirements.txt        pygame-ce (the only non-standard library)
 ├── chessgame/              The game package
 │   ├── __init__.py         Package description
 │   ├── constants.py        Shared constants and lookup dictionaries
-│   ├── board.py            Board creation, helpers and display
+│   ├── board.py            Board creation, helpers and text form
 │   ├── notation.py         Text <-> coordinates ("e2 e4" -> (6,4),(4,4))
 │   ├── moves.py            Move patterns for each piece (recursion here)
 │   ├── rules.py            Check, legal moves, castling, game end
 │   ├── game.py             Game state, validating/making moves, undo
 │   ├── storage.py          Save and load games to text files
-│   └── interface.py        Terminal UI: prompts, commands, messages
+│   ├── interface.py        What each click/command means (no drawing)
+│   └── gui.py              The pygame window: drawing, mouse, keyboard
 ├── tests/                  Unit tests (one file per area)
 ├── video/                  ~36-minute motion-graphic explainer of this outline
 │   ├── explainer.html      The animation (open in a browser to preview)
@@ -35,6 +38,7 @@ ctfinalproject/
 │   └── outline_explainer.mp4
 ├── CLAUDE.md               Project instructions + original proposal
 ├── REQUIREMENTS.md         Numbered requirements (FR-, EH-, TR-, ...)
+├── MOVES.md                Every chess move and how the code handles it
 ├── MODULES.md              This file
 └── PROMPTS.md              Log of every prompt given to Claude
 ```
@@ -58,9 +62,12 @@ game           uses rules, moves, notation, board, constants
    ↓
 storage        uses game, notation
    ↓
-interface      uses everything above (the only module that prints/inputs)
+interface      uses game, rules, notation, storage (returns messages)
    ↓
-main.py        calls interface.run()
+gui            uses interface, board, game (the only module that draws or
+               reads the mouse/keyboard, and the only one using pygame)
+   ↓
+main.py        calls gui.run()
 ```
 
 ---
@@ -92,7 +99,7 @@ col 0 is file a. So `a8 = (0, 0)`, `e2 = (6, 4)`, `h1 = (7, 7)`.
 ## Module by Module
 
 ### `main.py`: Entry Point  ✅ built
-Starts the program by calling `interface.run()`. Kept tiny on purpose so
+Starts the program by calling `gui.run()`, which opens the window. Kept tiny so
 the game can also be started from tests or other scripts.
 
 ### `constants.py`: Shared Constants  ✅ built
@@ -104,17 +111,16 @@ Holds every fixed value so it is defined once. These are the
 - Pawn tables: `PAWN_DIRECTION`, `PAWN_START_ROW`, `PROMOTION_ROW`.
 - Castling tables: `ROOK_CORNERS`, `CASTLING_KEYS`, `HOME_ROW`.
 
-### `board.py`: The Board  🟡 display built, helpers outlined
-Creates and displays the board (**lists**, **nested iteration**,
-**strings**).
+### `board.py`: The Board  🟡 setup built, helpers outlined
+Creates and inspects the board (**lists**, **nested iteration**,
+**strings**). The board is drawn on screen by `gui.py`; `board_to_text`
+gives a text form used by tests and for debugging.
 
 | Function | Status | Job |
 |----------|--------|-----|
 | `create_board()` | ✅ | Starting position as an 8x8 list of lists |
-| `terminal_supports_unicode()` | ✅ | Falls back to letters if the terminal can't show ♔ |
-| `symbol_for(piece)` | ✅ | Display character for a piece |
+| `symbol_for(piece)` | ✅ | Unicode symbol for a piece letter |
 | `board_to_text(board, highlights)` | ✅ | Board as a labelled string; `*`/`x` mark legal moves |
-| `print_board(board)` | ✅ | Prints `board_to_text` |
 | `board_from_strings(rows)` | ⬜ | Build a board from 8 strings (for tests) |
 | `copy_board(board)` | ⬜ | Independent copy of the board |
 | `on_board(row, col)` | ⬜ | Is the square inside the board? |
@@ -188,32 +194,52 @@ replaying them, so every move is re-validated.
 | `save_game(state, filename)` | Write moves; return `None` or an error message |
 | `load_game(filename)` | Replay moves; return `(state, None)` or `(None, error)` |
 
-### `interface.py`: Terminal User Interface  ✅ built
-The **only** module that reads input or prints game messages. Everything
-else just returns values, which keeps the logic testable.
+### `interface.py`: Command Logic  ✅ built
+Decides what each click or typed command means. It never draws or prints:
+every function returns a **result dictionary** (`state`, `messages`,
+`quit`, `promotion`, `highlights`, `played`), so it can be tested without a
+window.
 
 | Function | Job |
 |----------|-----|
-| `run()` | Main loop: show board → read input → run command → repeat |
-| `handle_command(state, text)` | Dispatches `help`, `moves`, `history`, `undo`, `new`, `save`, `load`, `quit`, or treats input as a move |
-| `handle_move(state, text)` | Parse → validate → (ask promotion piece) → make move |
-| `show_position(state)` | Board, captured pieces, check/checkmate/stalemate messages, whose turn |
-| `show_legal_moves(state, square)` | The `moves e2` command: highlights targets on the board |
-| `ask_promotion_piece()` | Re-prompts until q/r/b/n is entered |
-| `ask(prompt)` | `input()` that treats Ctrl+C / end of input as `quit` |
+| `handle_command(state, text)` | Runs `help`, `moves`, `history`, `undo`, `new`, `save`, `load`, `quit`, or treats the text as a move |
+| `try_move(state, start, end, promotion)` | Validate → (ask for a promotion piece) → make the move |
+| `typed_move(state, text)` | Parse typed text like `e2 e4`, then `try_move` |
+| `moves_command(state, square)` | The `moves e2` command: message + squares to highlight |
+| `legal_targets(state, square)` | Where a clicked piece may go |
+| `status_lines(state)` | "White to move.", check, checkmate (names the winner), stalemate |
+| `captured_by(state, colour)` | Pieces each side has taken |
 | `safe_game_status`, `not_built_message` | Let the UI run while engine functions are still outlines |
 
-**Commands available to players:**
+### `gui.py`: The pygame Window  ✅ built
+The **only** module that imports pygame, draws, or reads the mouse and
+keyboard. It turns events into calls to `interface.py` and draws the
+result.
+
+| Function | Job |
+|----------|-----|
+| `run()` | Opens the window; main loop: events → draw → repeat |
+| `handle_event`, `handle_click`, `handle_key` | Mouse clicks, buttons, typing in the command box |
+| `click_board(ui, square)` | First click selects a piece (legal targets marked), second click moves it |
+| `choose_promotion(ui, letter)` | Finishes a promotion from the Q/R/B/N picker |
+| `draw_board`, `draw_piece` | Squares, labels, selection, legal-move dots, check highlight, pieces |
+| `draw_panel` | Turn, status, captured pieces, buttons, move list, messages, command box |
+| `draw_promotion` | The promotion picker over the board |
+| `safely`, `quietly` | Show "Not built yet" for unbuilt engine code instead of crashing |
+
+**How players use the window:**
 ```
-e2 e4        move (also e2e4; promotion: e7 e8 q)
-moves e2     show legal moves for a square
-history      list moves played
-undo         take back the last move
-save [file]  save game (default savegame.txt)
-load [file]  load game
-new          new game
-help         list commands
-quit         exit
+click a piece, then its target   move (a picker appears for promotion)
+New / Undo / Save / Load / Help  buttons on the right
+type in the box + Enter:
+  e2 e4        move (also e2e4; promotion: e7 e8 q)
+  moves e2     highlight the legal moves for a square
+  history      list moves played
+  undo         take back the last move
+  save [file]  save game (default savegame.txt)
+  load [file]  load game
+  new / help / quit
+Esc            cancel a selection or the promotion picker
 ```
 
 ---
@@ -227,6 +253,7 @@ quit         exit
 | `test_moves.py` | Recursive rays, every piece's movement, en passant, promotion flag |
 | `test_rules.py` | Check, pins, checkmate (Fool's Mate), stalemate, castling, en passant, promotion |
 | `test_game_storage.py` | Error messages, turn order, undo, history, save/load |
+| `test_interface.py` | Commands, status lines, captures, playing and promoting via the command logic (no window needed) |
 
 The tests are already written as the **specification**. Tests for outline
 functions are reported as *skipped (not built yet)* and start running

@@ -1,9 +1,9 @@
-"""Creating, copying, inspecting and displaying the 8x8 board.
+"""Creating, copying and inspecting the 8x8 board.
 
-Status: display functions are built (UI). Helper functions are outlines.
+Status: create_board and the text form of the board are built. Helper
+functions are outlines. The board is drawn on screen by gui.py; the text
+form (board_to_text) is kept for tests and debugging.
 """
-
-import sys
 
 from .constants import (
     BACK_RANK, BOARD_SIZE, EMPTY, FILES, RANKS, SYMBOLS,
@@ -85,18 +85,8 @@ def find_king(board, colour):
 
 
 # ---------------------------------------------------------------------
-# Display (built: part of the UI)
+# Text form of the board (built: used by tests and for debugging)
 # ---------------------------------------------------------------------
-
-def terminal_supports_unicode():
-    """Return True if the terminal can print the chess symbols."""
-    encoding = getattr(sys.stdout, "encoding", None) or "ascii"
-    try:
-        "".join(SYMBOLS.values()).encode(encoding)
-        return True
-    except (UnicodeEncodeError, LookupError):
-        return False
-
 
 def symbol_for(piece, use_unicode=True):
     """Return the display character for a piece letter. FR-04"""
@@ -106,7 +96,7 @@ def symbol_for(piece, use_unicode=True):
 
 
 def board_to_text(board, use_unicode=True, highlights=None):
-    """Return the board as a printable string with rank/file labels. FR-02
+    """Return the board as a string with rank and file labels.
 
     highlights is an optional list of (row, col) squares to mark with '*'
     (empty) or 'x' (capture), used to show legal moves.
@@ -128,8 +118,3 @@ def board_to_text(board, use_unicode=True, highlights=None):
     lines.append(border)
     lines.append(file_labels)
     return "\n".join(lines)
-
-
-def print_board(board, use_unicode=True, highlights=None):
-    """Print the board to the terminal. FR-03"""
-    print(board_to_text(board, use_unicode, highlights))
