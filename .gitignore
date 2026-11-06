@@ -1,0 +1,11 @@
+# Python
+__pycache__/
+*.pyc
+
+# Saved games created while playing
+savegame.txt
+
+# Rendered video output (too large for GitHub; rebuild with video/render.py)
+video/*.mp4
+video/parts/
+video/stills/

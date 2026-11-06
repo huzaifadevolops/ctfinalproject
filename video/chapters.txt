@@ -1,0 +1,11 @@
+0:00 Introduction
+1:06 Part 1: The project documents
+3:41 Part 2: Architecture
+6:31 Part 3: Shared data formats
+8:52 Part 4: main.py, constants.py & board.py
+13:44 Part 5: notation.py & moves.py
+19:14 Part 6: rules.py
+23:21 Part 7: game.py & storage.py
+26:32 Part 8: interface.py
+30:09 Part 9: The tests
+33:29 Part 10: Requirements & the road ahead
